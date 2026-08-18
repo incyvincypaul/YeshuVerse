@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "68435618862",
+    "project_id": "yeshuverse-rosary",
+    "storage_bucket": "yeshuverse-rosary.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:68435618862:android:7a2ce01ce63ad30aab83bf",
+        "android_client_info": {
+          "package_name": "com.yeshuverse.liverosary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZVMr50C9o2s6xhYqbsfNFrS1zkVcrwzc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
