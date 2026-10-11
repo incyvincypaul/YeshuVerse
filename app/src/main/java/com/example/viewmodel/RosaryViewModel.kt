@@ -344,20 +344,22 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
                         }
                     } else {
                         // Host mode: keep our local/Firestore state
-                        _roomState.value = newState
+                        _roomState.value = newState.copy(language = _currentLanguage.value)
                     }
                 } else {
-                    // When not joined yet, keep the preview screen's mystery/language/participants in sync with Firestore,
-                    // and internal check sets the target step so joining connects instantly without confusion!
+                    // When not joined yet, keep the preview screen in sync, preserving user's chosen language
                     if (isCurrentlyLive) {
                         val elapsed = currentSched.getElapsedSecondsForActiveSession() ?: 0
                         val targetStep = calculateStepIndexForElapsed(elapsed, _rosarySequence.value)
                         _roomState.value = newState.copy(
+                            language = _currentLanguage.value,
                             currentStepIndex = targetStep,
                             isLive = true
                         )
                     } else {
-                        _roomState.value = newState
+                        _roomState.value = newState.copy(
+                            language = _currentLanguage.value
+                        )
                     }
                 }
             }

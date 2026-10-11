@@ -105,8 +105,17 @@ fun NovenaScreen(
             return
         }
 
-        val locale = when (currentLanguage) { LanguageEnum.HINDI -> Locale("hi", "IN"); LanguageEnum.MALAYALAM -> Locale("ml", "IN"); else -> Locale("en", "IN") }
-        tts.setLanguage(locale)
+        val candidates = when (currentLanguage) {
+            LanguageEnum.HINDI -> listOf(Locale("hi", "IN"), Locale("hi"), Locale.forLanguageTag("hi-IN"))
+            LanguageEnum.MALAYALAM -> listOf(Locale("ml", "IN"), Locale("ml"), Locale.forLanguageTag("ml-IN"))
+            else -> listOf(Locale("en", "IN"), Locale.US, Locale.ENGLISH)
+        }
+        for (loc in candidates) {
+            val res = tts.setLanguage(loc)
+            if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
+                break
+            }
+        }
 
         // Queue speech steps cleanly without reading extra header labels like "हे हमारे पिता" or "समापन प्रार्थना"
         val partsBeforeIntention = when (currentLanguage) {

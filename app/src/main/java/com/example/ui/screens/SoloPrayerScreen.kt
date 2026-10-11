@@ -136,6 +136,39 @@ fun SoloPrayerScreen(
                     }
                 },
                 actions = {
+                    Surface(
+                        onClick = {
+                            val nextLang = when (currentLanguage) {
+                                LanguageEnum.ENGLISH -> LanguageEnum.HINDI
+                                LanguageEnum.HINDI -> LanguageEnum.MALAYALAM
+                                else -> LanguageEnum.ENGLISH
+                            }
+                            viewModel.setLanguage(nextLang)
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.Transparent,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SacredGold.copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "Language",
+                                tint = SacredGold,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = currentLanguage.nativeName,
+                                fontSize = 12.sp,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = SacredDarkSurface

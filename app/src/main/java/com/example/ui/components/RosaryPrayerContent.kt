@@ -152,10 +152,14 @@ fun RosaryPrayerContent(
                         }
                     }
 
-                    // English / Hindi Switch Button
+                    // Language Switch Button
                     Surface(
                         onClick = {
-                            val nextLang = if (currentLanguage == LanguageEnum.ENGLISH) LanguageEnum.HINDI else LanguageEnum.ENGLISH
+                            val nextLang = when (currentLanguage) {
+                                LanguageEnum.ENGLISH -> LanguageEnum.HINDI
+                                LanguageEnum.HINDI -> LanguageEnum.MALAYALAM
+                                else -> LanguageEnum.ENGLISH
+                            }
                             viewModel.setLanguage(nextLang)
                         },
                         shape = RoundedCornerShape(20.dp),
@@ -175,7 +179,7 @@ fun RosaryPrayerContent(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = when (currentLanguage) { LanguageEnum.ENGLISH -> "हिंदी"; LanguageEnum.HINDI -> "മലയാളം"; else -> "Eng" },
+                                text = currentLanguage.nativeName,
                                 style = MaterialTheme.typography.labelMedium,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Bold

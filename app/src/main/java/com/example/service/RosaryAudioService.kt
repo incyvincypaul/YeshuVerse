@@ -213,19 +213,62 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
 
     private fun setupTtsLanguage(language: LanguageEnum) {
         if (!isTtsReady) return
-        val locale = when (language) {
-            LanguageEnum.ENGLISH -> Locale("en", "IN")
-            LanguageEnum.HINDI -> Locale("hi", "IN")
-            LanguageEnum.MALAYALAM -> Locale("ml", "IN")
-        }
-        val result = tts?.setLanguage(locale)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            tts?.setLanguage(Locale.ENGLISH)
-            isHindiTtsAvailable = false
-            isMalayalamTtsAvailable = false
-        } else {
-            isHindiTtsAvailable = (language == LanguageEnum.HINDI)
-            isMalayalamTtsAvailable = (language == LanguageEnum.MALAYALAM)
+        val t = tts ?: return
+
+        when (language) {
+            LanguageEnum.HINDI -> {
+                val hindiLocales = listOf(
+                    Locale("hi", "IN"),
+                    Locale("hi"),
+                    Locale.forLanguageTag("hi-IN")
+                )
+                var success = false
+                for (loc in hindiLocales) {
+                    val res = t.setLanguage(loc)
+                    if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
+                        success = true
+                        break
+                    }
+                }
+                isHindiTtsAvailable = success
+                if (!success) {
+                    t.setLanguage(Locale.ENGLISH)
+                }
+            }
+            LanguageEnum.MALAYALAM -> {
+                val malLocales = listOf(
+                    Locale("ml", "IN"),
+                    Locale("ml"),
+                    Locale.forLanguageTag("ml-IN")
+                )
+                var success = false
+                for (loc in malLocales) {
+                    val res = t.setLanguage(loc)
+                    if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
+                        success = true
+                        break
+                    }
+                }
+                isMalayalamTtsAvailable = success
+                if (!success) {
+                    t.setLanguage(Locale.ENGLISH)
+                }
+            }
+            LanguageEnum.ENGLISH -> {
+                val engLocales = listOf(
+                    Locale("en", "IN"),
+                    Locale.US,
+                    Locale.ENGLISH
+                )
+                for (loc in engLocales) {
+                    val res = t.setLanguage(loc)
+                    if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) {
+                        break
+                    }
+                }
+                isHindiTtsAvailable = false
+                isMalayalamTtsAvailable = false
+            }
         }
     }
 
@@ -250,16 +293,30 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
         
         val mysteryTitle = if (mystery != null) {
             when (lang) {
-                LanguageEnum.HINDI -> mystery.hindiTitle
-                LanguageEnum.MALAYALAM -> mystery.malayalamTitle
+                LanguageEnum.HINDI -> if (isHindiTtsAvailable) mystery.hindiTitle else mystery.englishTitle
+                LanguageEnum.MALAYALAM -> if (isMalayalamTtsAvailable) mystery.malayalamTitle else mystery.englishTitle
                 else -> mystery.englishTitle
             }
         } else null
         
-        val prayerText = if (lang == LanguageEnum.HINDI && !isHindiTtsAvailable) {
-            RosaryPrayers.getRomanizedHindiPrayerText(currentStep.prayerType)
-        } else {
-            RosaryPrayers.getPrayerText(currentStep.prayerType, lang)
+        val prayerText = when (lang) {
+            LanguageEnum.HINDI -> {
+                if (isHindiTtsAvailable) {
+                    RosaryPrayers.getPrayerText(currentStep.prayerType, lang)
+                } else {
+                    RosaryPrayers.getRomanizedHindiPrayerText(currentStep.prayerType)
+                }
+            }
+            LanguageEnum.MALAYALAM -> {
+                if (isMalayalamTtsAvailable) {
+                    RosaryPrayers.getPrayerText(currentStep.prayerType, lang)
+                } else {
+                    RosaryPrayers.getRomanizedMalayalamPrayerText(currentStep.prayerType)
+                }
+            }
+            LanguageEnum.ENGLISH -> {
+                RosaryPrayers.getPrayerText(currentStep.prayerType, lang)
+            }
         }
 
         val fullTextToSpeak = if (!mysteryTitle.isNullOrEmpty()) {

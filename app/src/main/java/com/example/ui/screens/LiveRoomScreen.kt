@@ -49,6 +49,8 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.Language
+import com.example.data.RosaryPrayers
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -525,6 +527,41 @@ fun LiveRoomScreen(
                     }
                 },
                 actions = {
+                    // Language Switch Button
+                    Surface(
+                        onClick = {
+                            val nextLang = when (currentLanguage) {
+                                LanguageEnum.ENGLISH -> LanguageEnum.HINDI
+                                LanguageEnum.HINDI -> LanguageEnum.MALAYALAM
+                                else -> LanguageEnum.ENGLISH
+                            }
+                            viewModel.setLanguage(nextLang)
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color.Transparent,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SacredGold.copy(alpha = 0.5f)),
+                        modifier = Modifier.padding(end = 6.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "Language",
+                                tint = SacredGold,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = currentLanguage.nativeName,
+                                fontSize = 12.sp,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
                     if (!isHostMode) {
                         IconButton(
                             onClick = {
@@ -820,6 +857,51 @@ fun LiveRoomScreen(
                             },
                             language = currentLanguage
                         )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Live Current Prayer Card (Shows current bead prayer text in chosen language)
+                        currentStep?.let { step ->
+                            val currentPrayerText = RosaryPrayers.getPrayerText(step.prayerType, currentLanguage)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFF141824),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, SacredGold.copy(alpha = 0.35f))
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = when (currentLanguage) {
+                                                LanguageEnum.HINDI -> step.labelHindi
+                                                LanguageEnum.MALAYALAM -> step.labelMalayalam
+                                                else -> step.labelEnglish
+                                            },
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = SacredGold,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = currentLanguage.nativeName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = TextSecondary,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = currentPrayerText,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = TextPrimary,
+                                        lineHeight = 22.sp
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(6.dp))
 

@@ -154,6 +154,44 @@ object RosaryPrayers {
         }
     }
 
+    // Phonetic Romanized Malayalam prayer text for smooth TTS reading when Malayalam TTS engine is not present
+    fun getRomanizedMalayalamPrayerText(prayerType: PrayerType): String {
+        return when (prayerType) {
+            PrayerType.SIGN_OF_THE_CROSS ->
+                "Pithaavinteyum Puthranteyum Parishudhaathmaavinteyum Naamathil. Amen."
+
+            PrayerType.APOSTLES_CREED ->
+                "Sarvashakthanaaya Pithaavaaya Daivathil Njaan Vishwasikkunnu. Aviduthe Ekaputhranum Njangalude Karthavumaaya Eesho Mishihaayilum Njaan Vishwasikkunnu. Ee Puthran Parishudhaathmaavinaal Garbhasthanaayi Kanyaamariyathil Ninnu Janichu. Peelaathosinte Bharanathin Keezhil Peedakal Anubhavichu, Kurishil Tharaykkappettu Marichu Adakkappettu. Paathaalathil Irangi Marichavarude Idaiyil Ninnu Moonnaam Naal Uyirthu. Swargathilekku Ezhunnalli Sarvashakthanaaya Pithaavaaya Daivathinte Valathubhaagathu Irikkunnu. Avideninnu Jeevikkunnavareyum Marichavareyum Vidhikkaan Varumennum Njaan Vishwasikkunnu. Parishudhaathmaavilum Njaan Vishwasikkunnu. Vishudha Kaatholikka Sabhayilum, Punyavaanmaarude Aikhyathilum Paapangalude Mochanathilum Shareerathinte Uyirppilum Nithyamaaya Jeevithathilum Njaan Vishwasikkunnu. Amen."
+
+            PrayerType.OUR_FATHER ->
+                "Swargasthanaaya Njangalude Pithaave, Angayude Naamam Poojithamaakaname. Angayude Raajyam Varanamay. Angayude Thirumanassu Swargathileppole Bhoomiyilumaakaname. Annannu Venda Aahaaram Innu Njangalkku Tharanamay. Njangalodu Thettu Cheyyunnavarodu Njangal Kshamikkunnathu Pole Njangalude Thettukal Njangalodum Kshamikkanamay. Njangale Pralobhanathil Ulppedutharuthe. Thinmayil Ninnu Njangale Rakshikkanamay. Amen."
+
+            PrayerType.HAIL_MARY ->
+                "Nanma Niranja Mariyame Swasthi! Karthavu Angayodu Koode. Sthreekalil Angu Anugrahikkappettavalaakunnu. Angayude Udarathin Phalamaaya Eesho Anugrahikkappettavanaakunnu. Parishudha Mariyame Thampuraante Amme, Paapikalaaya Njangalkku Vendi Ippozhum Njangalude Maranasamayathum Thampuraanodu Apekshikkanamay. Amen."
+
+            PrayerType.GLORY_BE ->
+                "Pithaavinum Puthranum Parishudhaathmaavinum Sthuthi. Aadiyileppole Ippozhum Eppozhum Ennekkum Amen."
+
+            PrayerType.FATIMA_PRAYER ->
+                "O Ente Eeshoye, Njangalude Paapangal Kshamikkanamay. Narakagniyil Ninnu Njangale Rakshikkanamay. Ella Aathmaakkaleyum Prathyekichu Angayude Sahayam Kooduthal Aavashyamullavareyum Swargathilekku Aanayikkanamay. Amen."
+
+            PrayerType.HAIL_HOLY_QUEEN ->
+                "Parishudha Raajnee, Karunayude Maathaave Swasthi! Njangalude Jeevanum Maadhuryavum Sharanavume Swasthi! Havvaayude Puranthallappetta Makkalaaya Njangal Angayppakkal Nilavilikkunnu. Kanneerinte Ee Thaazhvarayil Ninnu Vingikkarannu Angayppakkal Njangal Neduveerppidunnu. Aakayaal Njangalude Madhyasthe, Angayude Karunayulla Kannukal Njangalude Nere Thirikkanamay. Njangalude Ee Pravaasathinu Shesham Angayude Udarathinte Anugraheetha Phalamaaya Eeshoye Njangalkku Kaanichutharanamay. Karunayum Vaalsalyavum Maadhuryavum Niranja Kanyaamariyame! Amen."
+
+            PrayerType.MEMORARE ->
+                "Ethrayum Dayayulla Maathaave, Angayude Sankethathil Odivannu Angayude Sahaayam Thedi Angayude Madhyastham Apekshichavaril Oruvaneyengilum Angu Upekshichathaayi Kettittilla Ennu Angu Oorkkanamay. Kanyakakalude Raajniyaaya Kanyake, Dayayulla Maathaave, Ee Vishwasathil Dhairyappettu Angayude Thrippaadathingal Njaan Anayunnu. Vilapichukondu Paapiyaaya Njaan Angayude Sannidhiyil Nilkkunnu. Avatharitha Vachanathinte Maathaave, Ente Apekshakal Upekshikkaathe Dayapoorvam Kettarulaname. Amen."
+
+            PrayerType.LITANY_OF_LORETO ->
+                "Karthaave Kaniyanamay. Mishihaaye Kaniyanamay. Karthaave Kaniyanamay. Parishudha Mariyame, Njangalkku Vendi Apekshikkanamay. Daivathinte Parishudha Maathaave, Njangalkku Vendi Apekshikkanamay. Kanyakakalkku Makudamaaya Nirmala Kanyake, Njangalkku Vendi Apekshikkanamay. Mishihaayude Maathaave, Njangalkku Vendi Apekshikkanamay. Amen."
+
+            PrayerType.CONCLUDING_PRAYER ->
+                "Sarvashakthanaaya Daivame, Eesho Mishihaayude Jeevithavum Maranavum Uyirppum Vazhi Njangalkku Nithyaraksha Nalkiyallo. Parishudha Kanyaamariyathinte Japamaalayile Ee Rahasyangaleppatti Dhyaanikkunna Njangal Ivayil Adangiyirikkunnavare Anukarikkaanum Vaagdhaanam Cheyyappettirikkunnavare Praapikkanum Anugraham Nalkanamay. Njangalude Karthaavaaya Eesho Mishihaavazhi Njangal Apekshikkunnu. Amen."
+
+            PrayerType.INTRO_PRAYER ->
+                "Namukku Praarthikkaam. Eesho Mishihaayude Naamathil Njangal Japamaala Aarambhikkunnu. Amen."
+        }
+    }
+
         fun getMysteriesForType(type: MysteryType): List<RosaryMystery> {
         return when (type) {
             MysteryType.JOYFUL -> listOf(
