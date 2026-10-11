@@ -17,8 +17,8 @@ android {
     applicationId = "com.yeshuverse.liverosary"
     minSdk = 24
     targetSdk = 36
-    versionCode = 14
-    versionName = "10.0.2"
+    versionCode = 15
+    versionName = "10.0.3"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
