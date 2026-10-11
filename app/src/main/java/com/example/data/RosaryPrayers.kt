@@ -365,6 +365,43 @@ object RosaryPrayers {
         }
     }
 
+    fun getRomanizedMalayalamMysteryTitle(type: MysteryType, mysteryIndex: Int): String {
+        return when (type) {
+            MysteryType.JOYFUL -> when (mysteryIndex) {
+                1 -> "Onnam Santhosha Rahasyam: Mangalavartha"
+                2 -> "Randaam Santhosha Rahasyam: Elisabathine Sandarshikkunnu"
+                3 -> "Moonnaam Santhosha Rahasyam: Eeshoyude Jananam"
+                4 -> "Naalaam Santhosha Rahasyam: Eeshoye Devaalhayathil Samarppikkunnu"
+                5 -> "Anjaam Santhosha Rahasyam: Eeshoye Devaalhayathil Kandethunnu"
+                else -> "Santhosha Rahasyam"
+            }
+            MysteryType.SORROWFUL -> when (mysteryIndex) {
+                1 -> "Onnam Dhukha Rahasyam: Getsemane Thottathile Praarthana"
+                2 -> "Randaam Dhukha Rahasyam: Eesho Thoonil Kettiyadikkappadunnu"
+                3 -> "Moonnaam Dhukha Rahasyam: Mullumudi Dharippikkunnu"
+                4 -> "Naalaam Dhukha Rahasyam: Kurishu Chumakkunnu"
+                5 -> "Anjaam Dhukha Rahasyam: Kurishile Maranam"
+                else -> "Dhukha Rahasyam"
+            }
+            MysteryType.GLORIOUS -> when (mysteryIndex) {
+                1 -> "Onnam Mahathwa Rahasyam: Eeshoyude Uyirppu"
+                2 -> "Randaam Mahathwa Rahasyam: Swargarohanam"
+                3 -> "Moonnaam Mahathwa Rahasyam: Parishudhaathmaavinte Ezhunnallathu"
+                4 -> "Naalaam Mahathwa Rahasyam: Mathavinte Swargaropanam"
+                5 -> "Anjaam Mahathwa Rahasyam: Mathavinte Mudi Dharanam"
+                else -> "Mahathwa Rahasyam"
+            }
+            MysteryType.LUMINOUS -> when (mysteryIndex) {
+                1 -> "Onnam Prakasha Rahasyam: Yordanile Mnaanadeeksha"
+                2 -> "Randaam Prakasha Rahasyam: Kaanayile Vivaham"
+                3 -> "Moonnaam Prakasha Rahasyam: Daivarajya Praghoshanam"
+                4 -> "Naalaam Prakasha Rahasyam: Koodashiroopikaranam"
+                5 -> "Anjaam Prakasha Rahasyam: Divyakarunya Sthaapanam"
+                else -> "Prakasha Rahasyam"
+            }
+        }
+    }
+
     // Build complete sequence of 60 steps for the Rosary
     fun buildRosarySequence(mysteryType: MysteryType): List<RosaryBeadStep> {
         val steps = mutableListOf<RosaryBeadStep>()

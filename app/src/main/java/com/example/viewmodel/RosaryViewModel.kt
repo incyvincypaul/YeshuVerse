@@ -39,7 +39,8 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _roomState = MutableStateFlow(
         LiveRoomState(
-            currentMysteryType = RosaryPrayers.getTodayDefaultMystery()
+            currentMysteryType = RosaryPrayers.getTodayDefaultMystery(),
+            language = AppLanguageManager.currentLanguage.value
         )
     )
     val roomState: StateFlow<LiveRoomState> = _roomState.asStateFlow()
@@ -511,7 +512,8 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
         val updatedRoom = _roomState.value.copy(
             currentStepIndex = targetStep,
             isPlaying = true,
-            isLive = true
+            isLive = true,
+            language = _currentLanguage.value
         )
         _roomState.value = updatedRoom
 
@@ -519,7 +521,7 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
             service.setHostMode(_isHostMode.value)
             service.setupLiveRosarySession(
                 updatedRoom.currentMysteryType,
-                updatedRoom.language,
+                _currentLanguage.value,
                 targetStep,
                 getLiveSeekFraction(updatedRoom)
             )
@@ -549,14 +551,14 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
         _isLiveSyncEnabled.value = true
         _isLocallyPaused.value = false
         _audioService.value?.setLiveMode(true)
-        val updated = _roomState.value.copy(isPlaying = true, isLive = true)
+        val updated = _roomState.value.copy(isPlaying = true, isLive = true, language = _currentLanguage.value)
         _roomState.value = updated
         if (_isHostMode.value) {
             repository.updateLiveRoomState(updated)
         }
         _audioService.value?.let { service ->
             service.setHostMode(true)
-            service.setupLiveRosarySession(updated.currentMysteryType, updated.language, updated.currentStepIndex)
+            service.setupLiveRosarySession(updated.currentMysteryType, _currentLanguage.value, updated.currentStepIndex)
             service.play()
         }
     }
@@ -740,7 +742,7 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
                         if (isDrifting || !service.isPlaying.value) {
                             service.setupLiveRosarySession(
                                 updated.currentMysteryType,
-                                updated.language,
+                                _currentLanguage.value,
                                 stepToApply
                             )
                         }

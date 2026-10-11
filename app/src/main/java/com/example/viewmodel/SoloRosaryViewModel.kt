@@ -60,7 +60,7 @@ class SoloRosaryViewModel(application: Application) : AndroidViewModel(applicati
 
     fun bindAudioService(service: RosaryAudioService) {
         _audioService.value = service
-        // Do not automatically alter service or autoplay on binding
+        service.setupRosarySession(_currentMysteryType.value, _currentLanguage.value, service.currentStepIndex.value)
     }
 
     fun prepareSoloSession() {

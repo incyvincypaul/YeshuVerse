@@ -14,6 +14,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
+import com.example.data.AppLanguageManager
 import com.example.data.RosaryPrayers
 import com.example.model.LanguageEnum
 import com.example.model.MysteryType
@@ -50,7 +51,7 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
     private val _currentStepIndex = MutableStateFlow(0)
     val currentStepIndex: StateFlow<Int> = _currentStepIndex
 
-    private val _currentLanguage = MutableStateFlow(LanguageEnum.HINDI)
+    private val _currentLanguage = MutableStateFlow(AppLanguageManager.currentLanguage.value)
     val currentLanguage: StateFlow<LanguageEnum> = _currentLanguage
 
     private val _currentMysteryType = MutableStateFlow(MysteryType.JOYFUL)
@@ -89,13 +90,27 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        _currentLanguage.value = AppLanguageManager.currentLanguage.value
+        serviceScope.launch {
+            AppLanguageManager.currentLanguage.collect { lang ->
+                if (_currentLanguage.value != lang) {
+                    _currentLanguage.value = lang
+                    setupTtsLanguage(lang)
+                    updateNotification()
+                    if (_isPlaying.value) {
+                        speakCurrentStep()
+                    }
+                }
+            }
+        }
         tts = TextToSpeech(this, this)
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             isTtsReady = true
-            val currentLang = _currentLanguage.value
+            val currentLang = AppLanguageManager.currentLanguage.value
+            _currentLanguage.value = currentLang
             setupTtsLanguage(currentLang)
             
             tts?.setSpeechRate(_speechRate.value)
@@ -168,18 +183,16 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
 
     fun setupLiveRosarySession(mysteryType: MysteryType, language: LanguageEnum, initialStep: Int = 0, seekFraction: Float = 0f) {
         _currentMysteryType.value = mysteryType
-        val languageChanged = _currentLanguage.value != language
-        _currentLanguage.value = language
+        val effectiveLang = AppLanguageManager.currentLanguage.value
+        val languageChanged = _currentLanguage.value != effectiveLang
+        _currentLanguage.value = effectiveLang
         rosarySteps = RosaryPrayers.buildRosarySequence(mysteryType)
         
         val newStepIndex = initialStep.coerceIn(0, rosarySteps.lastIndex)
         val stepIndexChanged = _currentStepIndex.value != newStepIndex
         _currentStepIndex.value = newStepIndex
         
-        if (languageChanged) {
-            setupTtsLanguage(language)
-        }
-        
+        setupTtsLanguage(effectiveLang)
         updateNotification()
         
         if (_isPlaying.value && (languageChanged || stepIndexChanged)) {
@@ -189,18 +202,16 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
 
     fun setupRosarySession(mysteryType: MysteryType, language: LanguageEnum, initialStep: Int = 0) {
         _currentMysteryType.value = mysteryType
-        val languageChanged = _currentLanguage.value != language
-        _currentLanguage.value = language
+        val effectiveLang = AppLanguageManager.currentLanguage.value
+        val languageChanged = _currentLanguage.value != effectiveLang
+        _currentLanguage.value = effectiveLang
         rosarySteps = RosaryPrayers.buildRosarySequence(mysteryType)
         
         val newStepIndex = initialStep.coerceIn(0, rosarySteps.lastIndex)
         val stepIndexChanged = _currentStepIndex.value != newStepIndex
         _currentStepIndex.value = newStepIndex
         
-        if (languageChanged) {
-            setupTtsLanguage(language)
-        }
-        
+        setupTtsLanguage(effectiveLang)
         updateNotification()
         
         if (_isPlaying.value && (languageChanged || stepIndexChanged)) {
@@ -217,6 +228,7 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
 
         when (language) {
             LanguageEnum.HINDI -> {
+                isMalayalamTtsAvailable = false
                 val hindiLocales = listOf(
                     Locale("hi", "IN"),
                     Locale("hi"),
@@ -236,6 +248,7 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
                 }
             }
             LanguageEnum.MALAYALAM -> {
+                isHindiTtsAvailable = false
                 val malLocales = listOf(
                     Locale("ml", "IN"),
                     Locale("ml"),
@@ -249,12 +262,29 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
                         break
                     }
                 }
+                if (!success && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    try {
+                        val malVoice = t.voices?.firstOrNull { it.locale.language.equals("ml", ignoreCase = true) }
+                        if (malVoice != null) {
+                            t.voice = malVoice
+                            success = true
+                        }
+                    } catch (e: Exception) {
+                        // ignore
+                    }
+                }
                 isMalayalamTtsAvailable = success
                 if (!success) {
-                    t.setLanguage(Locale.ENGLISH)
+                    val engLocales = listOf(Locale("en", "IN"), Locale.US, Locale.ENGLISH)
+                    for (loc in engLocales) {
+                        val res = t.setLanguage(loc)
+                        if (res != TextToSpeech.LANG_MISSING_DATA && res != TextToSpeech.LANG_NOT_SUPPORTED) break
+                    }
                 }
             }
             LanguageEnum.ENGLISH -> {
+                isHindiTtsAvailable = false
+                isMalayalamTtsAvailable = false
                 val engLocales = listOf(
                     Locale("en", "IN"),
                     Locale.US,
@@ -266,8 +296,6 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
                         break
                     }
                 }
-                isHindiTtsAvailable = false
-                isMalayalamTtsAvailable = false
             }
         }
     }
@@ -279,7 +307,12 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
 
         val steps = rosarySteps
         val index = _currentStepIndex.value
-        val lang = _currentLanguage.value
+        // CRITICAL: Always use the active language from AppLanguageManager to guarantee adherence to user selection
+        val lang = AppLanguageManager.currentLanguage.value
+        if (_currentLanguage.value != lang) {
+            _currentLanguage.value = lang
+            setupTtsLanguage(lang)
+        }
         val mysteryType = _currentMysteryType.value
         
         if (steps.isEmpty()) return
@@ -294,7 +327,7 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
         val mysteryTitle = if (mystery != null) {
             when (lang) {
                 LanguageEnum.HINDI -> if (isHindiTtsAvailable) mystery.hindiTitle else mystery.englishTitle
-                LanguageEnum.MALAYALAM -> if (isMalayalamTtsAvailable) mystery.malayalamTitle else mystery.englishTitle
+                LanguageEnum.MALAYALAM -> if (isMalayalamTtsAvailable) mystery.malayalamTitle else RosaryPrayers.getRomanizedMalayalamMysteryTitle(mysteryType, currentStep.mysteryIndex ?: 1)
                 else -> mystery.englishTitle
             }
         } else null
@@ -432,7 +465,7 @@ class RosaryAudioService : Service(), TextToSpeech.OnInitListener {
     private fun buildNotification(): android.app.Notification {
         val steps = rosarySteps
         val index = _currentStepIndex.value
-        val lang = _currentLanguage.value
+        val lang = AppLanguageManager.currentLanguage.value
         val mysteryType = _currentMysteryType.value
         val isPlayingVal = _isPlaying.value
 
