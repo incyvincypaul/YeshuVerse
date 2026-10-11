@@ -42,6 +42,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import com.example.data.VideoRepository
 import com.example.model.LanguageEnum
+import com.example.ui.components.PrayerCountdownTimer
 import com.example.viewmodel.RosaryViewModel
 
 val AppBlack = Color(0xFF000000)
@@ -92,6 +93,7 @@ fun HomeScreen(
 
     val activeSession by viewModel.activeSession.collectAsState()
     val nextUpcomingSession by viewModel.nextUpcomingSession.collectAsState()
+    val serverPrayerStartTime by viewModel.serverPrayerStartTime.collectAsState()
     val isSessionLive = activeSession != null || roomState.isLive
 
     val scheduleState by viewModel.schedule.collectAsState()
@@ -534,6 +536,20 @@ fun HomeScreen(
                                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                             )
                         }
+                    }
+
+                    if (!isSessionLive) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        PrayerCountdownTimer(
+                            prayerStartTime = serverPrayerStartTime,
+                            sessionName = nextUpcomingSession?.let { "${it.name} (${it.startTime} - ${it.endTime})" },
+                            language = currentLanguage,
+                            isLiveNow = false,
+                            compactMode = false,
+                            onTimerFinished = {
+                                viewModel.syncLiveWithScheduleNow()
+                            }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

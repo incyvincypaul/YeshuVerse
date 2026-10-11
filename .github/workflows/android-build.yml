@@ -42,18 +42,31 @@ jobs:
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      - name: Build Release AAB & APK
-        run: |
-          gradle bundleRelease assembleRelease --no-daemon
+      - name: Make gradlew executable
+        run: chmod +x gradlew || true
 
-      - name: Upload Release AAB Bundle Artifact (for Play Store)
+      - name: Build APKs and Bundle
+        run: |
+          if command -v gradle >/dev/null 2>&1; then
+            gradle assembleDebug assembleRelease bundleRelease --no-daemon
+          else
+            ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon
+          fi
+
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release.aab
-          path: app/build/outputs/bundle/release/app-release.aab
+          name: app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
           path: app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload Release AAB Bundle Artifact (for Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.aab
+          path: app/build/outputs/bundle/release/app-release.aab

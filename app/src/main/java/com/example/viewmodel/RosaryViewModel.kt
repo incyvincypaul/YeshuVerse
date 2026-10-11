@@ -175,6 +175,21 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
     private val _activeSession = MutableStateFlow<com.example.model.SessionItem?>(null)
     val activeSession: StateFlow<com.example.model.SessionItem?> = _activeSession.asStateFlow()
 
+    private val _serverPrayerStartTime = MutableStateFlow(0L)
+    val serverPrayerStartTime: StateFlow<Long> = _serverPrayerStartTime.asStateFlow()
+
+    fun setServerPrayerStartTime(timeMillis: Long) {
+        _serverPrayerStartTime.value = timeMillis
+        val currentSched = _schedule.value ?: com.example.model.RosarySchedule()
+        val updatedSched = currentSched.copy(prayerStartTime = timeMillis)
+        _schedule.value = updatedSched
+        repository.saveSchedule(updatedSched)
+
+        val updatedRoom = _roomState.value.copy(prayerStartTime = timeMillis)
+        _roomState.value = updatedRoom
+        repository.updateLiveRoomState(updatedRoom)
+    }
+
     init {
         // Initialize sequence with the current roomState's default mystery
         updateRosarySequence(_roomState.value.currentMysteryType)
@@ -274,6 +289,9 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
         // Observe real-time state from repository
         viewModelScope.launch {
             repository.observeLiveRoom().collect { newState ->
+                if (newState.prayerStartTime > 0L) {
+                    _serverPrayerStartTime.value = newState.prayerStartTime
+                }
                 val currentSched = _schedule.value ?: com.example.model.RosarySchedule()
                 val isCurrentlyLive = currentSched.getCurrentActiveSession() != null
                 
@@ -667,6 +685,13 @@ class RosaryViewModel(application: Application) : AndroidViewModel(application) 
         _activeSession.value = active
         _nextUpcomingSession.value = currentSched.getNextUpcomingSession()
         val isCurrentlyLive = active != null
+
+        val effectiveStart = if (_roomState.value.prayerStartTime > 0L && _roomState.value.prayerStartTime > System.currentTimeMillis() - 45 * 60 * 1000L) {
+            _roomState.value.prayerStartTime
+        } else {
+            currentSched.getEffectivePrayerStartTimeMillis()
+        }
+        _serverPrayerStartTime.value = effectiveStart
 
         val elapsed = currentSched.getElapsedSecondsForActiveSession()
         

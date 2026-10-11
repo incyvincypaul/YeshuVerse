@@ -80,6 +80,12 @@ class FirebaseSyncRepository {
                         LanguageEnum.HINDI
                     }
 
+                    val prayerStartTime = when (val raw = snapshot.get("prayerStartTime")) {
+                        is Number -> raw.toLong()
+                        is String -> raw.toLongOrNull() ?: 0L
+                        else -> 0L
+                    }
+
                     val state = LiveRoomState(
                         roomId = roomId,
                         roomName = snapshot.getString("roomName") ?: "YeshuVerse Live Rosary",
@@ -90,7 +96,8 @@ class FirebaseSyncRepository {
                         isPlaying = snapshot.getBoolean("isPlaying") ?: false,
                         participantCount = (snapshot.getLong("participantCount") ?: 284L).toInt(),
                         language = language,
-                        lastUpdatedTimestamp = snapshot.getLong("lastUpdatedTimestamp") ?: System.currentTimeMillis()
+                        lastUpdatedTimestamp = snapshot.getLong("lastUpdatedTimestamp") ?: System.currentTimeMillis(),
+                        prayerStartTime = prayerStartTime
                     )
                     trySend(state)
                 } else {
@@ -178,7 +185,8 @@ class FirebaseSyncRepository {
                 "isPlaying" to newState.isPlaying,
                 "participantCount" to newState.participantCount,
                 "language" to newState.language.name,
-                "lastUpdatedTimestamp" to System.currentTimeMillis()
+                "lastUpdatedTimestamp" to System.currentTimeMillis(),
+                "prayerStartTime" to newState.prayerStartTime
             )
             db.collection("rosary_live_rooms").document(newState.roomId).set(map)
                 .addOnSuccessListener {

@@ -70,5 +70,6 @@ data class LiveRoomState(
     val isPlaying: Boolean = false,
     val participantCount: Int = 184,
     val language: LanguageEnum = LanguageEnum.HINDI,
-    val lastUpdatedTimestamp: Long = System.currentTimeMillis()
+    val lastUpdatedTimestamp: Long = System.currentTimeMillis(),
+    val prayerStartTime: Long = 0L
 )

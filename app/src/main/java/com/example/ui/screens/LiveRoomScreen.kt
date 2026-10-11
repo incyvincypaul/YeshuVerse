@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -101,6 +102,7 @@ import com.example.ui.components.CandleItem
 import com.example.ui.components.DecadeSelector
 import com.example.ui.components.MeditationThemeBox
 import com.example.ui.components.MysteryHeader
+import com.example.ui.components.PrayerCountdownTimer
 import com.example.ui.theme.SacredBlack
 import com.example.ui.theme.SacredBlueDark
 import com.example.ui.theme.SacredBlueLight
@@ -203,6 +205,7 @@ fun LiveRoomScreen(
     val nextUpcomingSession by viewModel.nextUpcomingSession.collectAsState()
     val loopWaitTimeRemaining by viewModel.loopWaitTimeRemaining.collectAsState()
     val activeSession by viewModel.activeSession.collectAsState()
+    val serverPrayerStartTime by viewModel.serverPrayerStartTime.collectAsState()
 
     // Completion Dialog state
     val isHindi = currentLanguage == LanguageEnum.HINDI
@@ -596,72 +599,26 @@ fun LiveRoomScreen(
             }
 
             if (!roomState.isLive) {
-                // Non-Live Scheduled Banner Card
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    color = SacredDarkSurface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SacredCardBorder)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = when (currentLanguage) {
-                                LanguageEnum.HINDI -> if (nextUpcomingSession != null) "अगली लाइव रोज़री निर्धारित समय पर शुरू होगी" else "आज की सभी लाइव रोज़री समाप्त हो चुकी हैं।"
-                                LanguageEnum.MALAYALAM -> if (nextUpcomingSession != null) "അടുത്ത തത്സമയ ജപമാല നിശ്ചിത സമയത്ത് ആരംഭിക്കും" else "ഇന്നത്തെ എല്ലാ തത്സമയ ജപമാലകളും അവസാനിച്ചു."
-                                else -> if (nextUpcomingSession != null) "NEXT LIVE ROSARY IS SCHEDULED" else "All today's Live Rosary sessions have ended."
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SacredGold,
-                            fontWeight = FontWeight.Black,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Text(
-                            text = when (currentLanguage) {
-                                LanguageEnum.HINDI -> if (nextUpcomingSession != null) "लाइव प्रार्थना के निर्धारित समय पर लाइव रूम चालू हो जाएगा।" else "कृपया कल के निर्धारित समय पर पुनः जुड़ें।"
-                                LanguageEnum.MALAYALAM -> if (nextUpcomingSession != null) "തത്സമയ ജപമാല ഷെഡ്യൂൾ പ്രകാരം ആരംഭിക്കും." else "നാളെ വീണ്ടും ഞങ്ങളോടൊപ്പം ചേരുക."
-                                else -> if (nextUpcomingSession != null) "Live Rosary starts according to the daily schedule." else "Please join us again tomorrow."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        if (nextUpcomingSession != null) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                color = SacredCardBg,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SacredGold.copy(alpha = 0.5f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = when (currentLanguage) { LanguageEnum.HINDI -> "अगली आगामी लाइव रोज़री :"; LanguageEnum.MALAYALAM -> "അടുത്ത തത്സമയ ജപമാല :"; else -> "NEXT UPCOMING LIVE ROSARY :" },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = SacredGold,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${nextUpcomingSession?.name} (${nextUpcomingSession?.startTime} - ${nextUpcomingSession?.endTime})",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = TextPrimary,
-                                        fontWeight = FontWeight.ExtraBold
-                                    )
-                                }
-                            }
-                        }
+                // Visual Countdown Timer component calculating difference with server 'prayerStartTime'
+                PrayerCountdownTimer(
+                    prayerStartTime = serverPrayerStartTime,
+                    sessionName = nextUpcomingSession?.let { "${it.name} (${it.startTime} - ${it.endTime})" },
+                    language = currentLanguage,
+                    isLiveNow = false,
+                    compactMode = false,
+                    onTimerFinished = {
+                        viewModel.syncLiveWithScheduleNow()
                     }
-                }
+                )
+            } else {
+                // Compact Live Sync Bar when session is actively live
+                PrayerCountdownTimer(
+                    prayerStartTime = serverPrayerStartTime,
+                    sessionName = activeSession?.let { "${it.name} (${it.startTime} - ${it.endTime})" },
+                    language = currentLanguage,
+                    isLiveNow = true,
+                    compactMode = true
+                )
             }
 
             // 1. Top Prominent Buttons: Live Community vs Private Prayers
@@ -1035,7 +992,12 @@ fun LiveRoomScreen(
         }
         
         if (roomState.isLive && !isConnectingOverlayVisible) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
+                contentAlignment = Alignment.BottomStart
+            ) {
                 LiveChatBox(
                     modifier = Modifier.padding(bottom = 60.dp),
                     currentLanguage = currentLanguage
@@ -1115,36 +1077,15 @@ fun LiveRoomScreen(
                             lineHeight = 18.sp
                         )
 
-                        // Next Upcoming Session Card
+                        // Next Upcoming Session Card & Countdown Timer
                         val upcoming = nextUpcomingSession
-                        if (upcoming != null) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color(0xFF151B28),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, SacredGold.copy(alpha = 0.5f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = when (currentLanguage) { LanguageEnum.HINDI -> "अगली आगामी लाइव रोज़री :"; LanguageEnum.MALAYALAM -> "അടുത്ത തത്സമയ ജപമാല :"; else -> "NEXT UPCOMING LIVE ROSARY :" },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = SacredGold,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "${upcoming.name}\n(${upcoming.startTime} - ${upcoming.endTime})",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextPrimary,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
+                        if (upcoming != null || serverPrayerStartTime > 0L) {
+                            PrayerCountdownTimer(
+                                prayerStartTime = serverPrayerStartTime,
+                                sessionName = upcoming?.let { "${it.name} (${it.startTime} - ${it.endTime})" },
+                                language = currentLanguage,
+                                compactMode = true
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))

@@ -29,6 +29,7 @@ import com.example.data.VideoRepository
 import com.example.model.DevotionalVideo
 import com.example.model.LanguageEnum
 import com.example.model.RosarySchedule
+import com.example.ui.components.PrayerCountdownTimer
 import com.example.ui.theme.*
 import com.example.viewmodel.RosaryViewModel
 import kotlinx.coroutines.launch
@@ -99,6 +100,7 @@ fun AdminPanelScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
         ) {
             // Tab Row
             TabRow(
@@ -331,11 +333,111 @@ fun AdminPanelScreen(
                         }
                     }
 
+                    // Server-Stored Prayer Start Time Section
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "SERVER SYNCHRONIZED START TIME (prayerStartTime)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = SacredGold,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = SacredCardBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SacredCardBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Preview of what users see on their devices in real-time (Difference between device clock and server 'prayerStartTime'):",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary
+                            )
+
+                            val effectiveStart = schedule.getEffectivePrayerStartTimeMillis()
+                            PrayerCountdownTimer(
+                                prayerStartTime = effectiveStart,
+                                sessionName = schedule.getNextUpcomingSession()?.let { "${it.name} (${it.startTime} - ${it.endTime})" },
+                                compactMode = true
+                            )
+
+                            Text(
+                                text = "Quick Prayer Timing Triggers (Saves to Firestore instantly):",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SacredGold,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val nextStart = schedule.calculateNextPrayerStartTimeMillis()
+                                        schedule = schedule.copy(prayerStartTime = nextStart)
+                                        repository.saveSchedule(schedule)
+                                        viewModel.setServerPrayerStartTime(nextStart)
+                                        Toast.makeText(context, "Synced prayerStartTime with next schedule session!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = SacredGold)
+                                ) {
+                                    Text("From Sched", fontSize = 11.sp, maxLines = 1)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val fiveMinStart = System.currentTimeMillis() + 5 * 60 * 1000L
+                                        schedule = schedule.copy(prayerStartTime = fiveMinStart)
+                                        repository.saveSchedule(schedule)
+                                        viewModel.setServerPrayerStartTime(fiveMinStart)
+                                        Toast.makeText(context, "Prayer start set to in 5 minutes!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF9F0A))
+                                ) {
+                                    Text("In 5 Mins", fontSize = 11.sp, maxLines = 1)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val nowStart = System.currentTimeMillis()
+                                        schedule = schedule.copy(prayerStartTime = nowStart)
+                                        repository.saveSchedule(schedule)
+                                        viewModel.setServerPrayerStartTime(nowStart)
+                                        viewModel.syncLiveWithScheduleNow()
+                                        Toast.makeText(context, "Live Prayer started now!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusLiveRed)
+                                ) {
+                                    Text("Start Now", fontSize = 11.sp, maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+
                     // Save Button
                     Button(
                         onClick = {
                             scope.launch {
-                                repository.saveSchedule(schedule)
+                                val nextStart = if (schedule.prayerStartTime > 0L && schedule.prayerStartTime > System.currentTimeMillis() - 45 * 60 * 1000L) {
+                                    schedule.prayerStartTime
+                                } else {
+                                    schedule.calculateNextPrayerStartTimeMillis()
+                                }
+                                val updatedSchedule = schedule.copy(prayerStartTime = nextStart)
+                                schedule = updatedSchedule
+                                repository.saveSchedule(updatedSchedule)
+                                viewModel.setServerPrayerStartTime(nextStart)
                                 showSavedMessage = true
                             }
                         },

@@ -26,7 +26,8 @@ data class RosarySchedule(
     val minPrayingCount: Int = 10,
     val maxPrayingCount: Int = 150,
     val slotClaims: Map<String, String> = emptyMap(),
-    val claimsDate: String = ""
+    val claimsDate: String = "",
+    val prayerStartTime: Long = 0L
 ) {
     @Exclude
     fun getAllSessions(): List<SessionItem> {
@@ -160,6 +161,40 @@ data class RosarySchedule(
         }
         // If all passed today, return the first session tomorrow
         return sortedSessions.firstOrNull()
+    }
+
+    @Exclude
+    fun calculateNextPrayerStartTimeMillis(): Long {
+        val nextSession = getNextUpcomingSession() ?: return 0L
+        val startMin = parseTimeToMinutes(nextSession.startTime)
+        val now = Calendar.getInstance()
+        val currentMin = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+
+        val targetCal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, startMin / 60)
+            set(Calendar.MINUTE, startMin % 60)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        if (startMin <= currentMin) {
+            // Tomorrow
+            targetCal.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        return targetCal.timeInMillis
+    }
+
+    @Exclude
+    fun getEffectivePrayerStartTimeMillis(): Long {
+        val now = System.currentTimeMillis()
+        if (prayerStartTime > 0L) {
+            val diff = prayerStartTime - now
+            // If upcoming or recently started (within last 45 mins)
+            if (diff > -45 * 60 * 1000L && diff < 48 * 3600 * 1000L) {
+                return prayerStartTime
+            }
+        }
+        return calculateNextPrayerStartTimeMillis()
     }
 
     private fun parseTimeToMinutes(timeStr: String): Int {
